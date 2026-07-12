@@ -13,8 +13,8 @@ TURN, no Direct-TCP ports.
 ```bash
 # on the pod (SSH is more reliable than the web terminal)
 cd /workspace
-git clone https://github.com/Sa3d-99/runpod_udp_to_tcp.git
-cd runpod_udp_to_tcp && chmod +x *.sh
+git clone https://github.com/Sa3d-99/runpod_noVNC_isaac_sim.git
+cd runpod_noVNC_isaac_sim && chmod +x *.sh
 bash novnc.sh
 ```
 
@@ -63,7 +63,7 @@ and ship the pixels over HTTP — the one thing RunPod's network does well.
 RunPod console → Edit Pod → **Container Start Command**:
 
 ```bash
-bash -c "command -v git >/dev/null || (apt-get update && apt-get install -y git); cd /workspace && (test -d runpod_udp_to_tcp || git clone https://github.com/Sa3d-99/runpod_udp_to_tcp.git) && cd runpod_udp_to_tcp && chmod +x *.sh && bash novnc.sh && sleep infinity"
+bash -c "command -v git >/dev/null || (apt-get update && apt-get install -y git); cd /workspace && (test -d runpod_noVNC_isaac_sim || git clone https://github.com/Sa3d-99/runpod_noVNC_isaac_sim.git) && cd runpod_noVNC_isaac_sim && chmod +x *.sh && bash novnc.sh && sleep infinity"
 ```
 
 Clones on first boot, reuses after (`/workspace` is the persistent volume), then
