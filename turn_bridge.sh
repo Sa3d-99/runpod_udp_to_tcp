@@ -99,6 +99,7 @@ realm=isaacsim
 no-tls
 no-dtls
 no-cli
+verbose
 simple-log
 log-file=${LOG_DIR}/coturn.log
 pidfile=${LOG_DIR}/coturn.pid
