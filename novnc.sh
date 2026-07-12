@@ -40,21 +40,9 @@ mkdir -p "$LOG_DIR"
 log() { echo "[novnc] $*"; }
 die() { echo "[novnc] ERROR: $*" >&2; exit 1; }
 
-# --- 1. dependencies -----------------------------------------------------------
-NEED=0
-for c in Xvfb x11vnc fluxbox websockify xdpyinfo; do
-    command -v "$c" >/dev/null 2>&1 || NEED=1
-done
-[[ -d /usr/share/novnc ]] || NEED=1
-if [[ $NEED -eq 1 ]]; then
-    log "Installing desktop stack (Xvfb, x11vnc, fluxbox, noVNC, websockify)..."
-    apt-get update -qq
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-        xvfb x11vnc fluxbox novnc websockify x11-utils >/dev/null
-    log "Dependencies installed."
-else
-    log "Dependencies already present."
-fi
+# --- 1. dependencies (git, python3, Xvfb, x11vnc, fluxbox, noVNC, websockify) ---
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+bash "$SCRIPT_DIR/install.sh"
 
 # --- 2. stop only OUR previous stack (never the container's main Isaac) ---------
 # The RunPod Isaac image runs a headless Isaac as the container's MAIN process

@@ -122,8 +122,9 @@ that assume a normal network, a 0×0 viewport. NVIDIA's WebRTC stack assumes rea
 UDP networking with reachable addresses; RunPod provides neither. Fighting it is
 whack-a-mole.
 
-*(Kept in the repo as `turn_bridge.sh` / `start_all.sh` for reference. Do not
-start here.)*
+*(The coturn/TURN scripts have been deleted from this repo — they never worked
+end to end and keeping them around would only invite someone to retry a dead end.
+This document is what remains of them.)*
 
 ---
 

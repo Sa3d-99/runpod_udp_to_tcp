@@ -1,37 +1,60 @@
 #!/usr/bin/env bash
 # =============================================================================
-# install.sh — installs everything the bridge needs inside the container.
+# install.sh — install everything the noVNC method needs, inside the container.
 #
-# System packages (apt): git, python3, coturn, iproute2 (ss)
-# Python packages (pip): none needed — scripts use the standard library only;
-#                        requirements.txt is kept for future additions.
+# System packages (apt):
+#   git         clone/update this repo on the pod
+#   python3     runtime for websockify (the noVNC WebSocket bridge)
+#   python3-pip installs requirements.txt
+#   xvfb        the virtual X screen Isaac Sim renders into
+#   x11vnc      exposes that screen as a VNC server
+#   fluxbox     minimal window manager (so Isaac's window is placed/resizable)
+#   novnc       the browser-side VNC client (HTML/JS served to you)
+#   websockify  bridges noVNC's WebSocket to the VNC port
+#   x11-utils   provides xdpyinfo, used to verify the display came up
 #
-# Idempotent: skips apt entirely when all tools are already present.
-# start_all.sh runs this automatically, so you rarely call it yourself.
+# Python packages (pip): see requirements.txt
+#
+# Idempotent: skips apt entirely when everything is already present.
+# novnc.sh calls this automatically — you rarely need to run it yourself.
 # =============================================================================
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+log() { echo "[install] $*"; }
+
+# --- system packages ------------------------------------------------------------
 MISSING=()
-for cmd in git python3 turnserver ss; do
+for cmd in git python3 Xvfb x11vnc fluxbox websockify xdpyinfo; do
     command -v "$cmd" >/dev/null 2>&1 || MISSING+=("$cmd")
 done
+# noVNC ships web assets, not a binary — check the directory instead
+[[ -d /usr/share/novnc ]] || MISSING+=("novnc")
 
 if [[ ${#MISSING[@]} -eq 0 ]]; then
-    echo "[install] all dependencies already present"
+    log "All system dependencies already present."
 else
-    echo "[install] installing missing tools: ${MISSING[*]}"
+    log "Installing missing: ${MISSING[*]}"
     apt-get update -qq
     DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-        git python3 python3-pip coturn iproute2 ca-certificates >/dev/null
-    echo "[install] system packages done"
+        git \
+        python3 python3-pip \
+        xvfb x11vnc fluxbox \
+        novnc websockify \
+        x11-utils \
+        ca-certificates >/dev/null
+    log "System packages installed."
 fi
 
-# Install pip requirements only if the file lists any real package.
-if [[ -f "$DIR/requirements.txt" ]] && grep -qEv '^\s*(#|$)' "$DIR/requirements.txt"; then
-    echo "[install] installing pip requirements"
-    python3 -m pip install --quiet -r "$DIR/requirements.txt"
+# --- python packages ------------------------------------------------------------
+# Only runs if requirements.txt lists a real (non-comment) package.
+REQ="$DIR/requirements.txt"
+if [[ -f "$REQ" ]] && grep -qEv '^[[:space:]]*(#|$)' "$REQ"; then
+    log "Installing Python requirements..."
+    python3 -m pip install --quiet --no-input -r "$REQ" 2>/dev/null \
+        || python3 -m pip install --quiet --no-input --break-system-packages -r "$REQ"
+    log "Python packages installed."
 fi
 
-echo "[install] ready"
+log "Ready."
