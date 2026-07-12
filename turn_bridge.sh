@@ -205,7 +205,11 @@ if [[ -f "$LOG_DIR/supervisor.pid" ]] && kill -0 "$(cat "$LOG_DIR/supervisor.pid
     log "Bridge already running (pid $(cat "$LOG_DIR/supervisor.pid")). Restarting it."
     kill "$(cat "$LOG_DIR/supervisor.pid")" 2>/dev/null || true
     pkill -f "turnserver -c $CONF" 2>/dev/null || true
-    sleep 1
+    # wait until the old instance is really gone and the port is free
+    for _ in $(seq 1 20); do
+        pgrep -f "turnserver -c $CONF" >/dev/null 2>&1 || break
+        sleep 0.5
+    done
 fi
 
 nohup bash -c "
@@ -218,8 +222,16 @@ nohup bash -c "
 echo $! > "$LOG_DIR/supervisor.pid"
 disown
 
-sleep 2
-if ss -ltn 2>/dev/null | grep -q ":${TURN_INTERNAL_PORT} "; then
+# give coturn up to 15s to bind (restarts can race the old instance's teardown)
+LISTENING=""
+for _ in $(seq 1 15); do
+    if ss -ltn 2>/dev/null | grep -q ":${TURN_INTERNAL_PORT} "; then
+        LISTENING=1
+        break
+    fi
+    sleep 1
+done
+if [[ -n "$LISTENING" ]]; then
     log "OK: TURN relay listening on TCP :${TURN_INTERNAL_PORT} (supervisor pid $(cat "$LOG_DIR/supervisor.pid"))."
 else
     log "ERROR: coturn is not listening on :${TURN_INTERNAL_PORT} — check $LOG_DIR/coturn.log"
