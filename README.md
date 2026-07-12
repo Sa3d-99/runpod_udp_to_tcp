@@ -27,9 +27,16 @@ browser ⇄ TCP ⇄ RunPod Direct-TCP port ⇄ coturn (in pod) ⇄ UDP (pod-inte
 
 ### 1. One-time pod setup
 
-RunPod console → your Pod → **Edit Pod** → *Expose TCP Ports* → add `3478` → save
-(pod restarts). RunPod then injects `RUNPOD_PUBLIC_IP` and `RUNPOD_TCP_PORT_3478`
-into the container — the scripts auto-detect them, you never type an IP.
+RunPod console → your Pod → **Edit Pod** → *Expose TCP Ports* → set to
+`3478,8211,49100` → save (pod restarts). RunPod injects `RUNPOD_PUBLIC_IP` and
+`RUNPOD_TCP_PORT_3478/_8211/_49100` into the container — the scripts
+auto-detect them, you never type an IP.
+
+| Port | Role |
+|---|---|
+| 3478 | TURN relay — carries the UDP media over TCP |
+| 8211 | Web player page, served plain-http over Direct TCP (an https page would be blocked from calling the plain-http signaling endpoint — mixed content) |
+| 49100 | WebRTC signaling; `kit-player.js` hardcodes `:49100`, so `turn_bridge.sh` rewrites it to the mapped external port |
 
 ### 2. Run
 
@@ -54,11 +61,16 @@ Wait for Isaac Sim to finish loading, then open the printed URL in
 **Chrome/Chromium** (Firefox unreliable per NVIDIA docs):
 
 ```
-https://<POD_ID>-8211.proxy.runpod.net/streaming/webrtc-client?server=<POD_ID>-8211.proxy.runpod.net
+http://<PUBLIC_IP>:<mapped 8211 port>/streaming/webrtc-demo/?server=<PUBLIC_IP>
 ```
 
-Also saved to `/workspace/stream-bridge-logs/stream_url.txt`
-(`cat` it any time).
+Also saved to `/workspace/stream-bridge-logs/stream_url.txt` (`cat` it any time).
+Press the red **▷** play button once it becomes enabled.
+
+Do **not** use the RunPod https proxy URL (`…proxy.runpod.net`): the
+`/streaming/webrtc-client` path 307-redirects to the pod's internal IP
+(unreachable), and an https page cannot call the plain-http signaling port
+(mixed content) — both dead ends we hit while debugging.
 
 ## Fully automatic on pod boot
 
@@ -73,6 +85,12 @@ Installs git if the image lacks it, clones on first boot, reuses on later boots
 
 ## Verify / troubleshoot
 
+- `env | grep RUNPOD_TCP_PORT` → must show all three: `_3478`, `_8211`, `_49100`.
+- Signaling patch applied:
+  `grep -c "$RUNPOD_TCP_PORT_49100" $(find /isaac-sim -path '*streamclient.webrtc*' -name kit-player.js)` → non-zero.
+- ICE config served (run inside pod once Isaac Sim is loaded):
+  `curl -s http://localhost:8211/streaming/ice-servers` → JSON containing your `turn:` URL.
+- Signaling port open: `ss -ltn | grep 49100` → LISTEN.
 - `ss -ltn | grep 3478` → coturn listening.
 - `tail -f /workspace/stream-bridge-logs/coturn.log` → `allocation` lines appear
   when the browser connects.

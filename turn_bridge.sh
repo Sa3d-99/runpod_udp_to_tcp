@@ -161,6 +161,21 @@ PYEOF
     log "Restart Isaac Sim for the patch to take effect."
 fi
 
+# --- 5b. patch the web client so signaling uses the RunPod-mapped port ----------
+# The stock kit-player.js hardcodes signaling to <server>:49100. RunPod's Direct
+# TCP mapping gives 49100 a different external port, so rewrite the constant.
+# Idempotent: always regenerates from the pristine .orig copy.
+KIT_PLAYER="$(find "$ISAAC_ROOT" -path '*streamclient.webrtc*' -name 'kit-player.js' 2>/dev/null | head -1 || true)"
+if [[ -z "${SIGNALING_PUBLIC_PORT:-}" ]]; then
+    log "NOTE: SIGNALING_PUBLIC_PORT not set — skipping kit-player.js signaling patch."
+elif [[ -z "$KIT_PLAYER" ]]; then
+    log "WARNING: kit-player.js not found under $ISAAC_ROOT — cannot patch signaling port."
+else
+    cp -n "$KIT_PLAYER" "${KIT_PLAYER}.orig" || true
+    sed "s/49100/${SIGNALING_PUBLIC_PORT}/g" "${KIT_PLAYER}.orig" > "$KIT_PLAYER"
+    log "Patched web client signaling port: 49100 -> ${SIGNALING_PUBLIC_PORT}"
+fi
+
 # --- 6. run coturn supervised in the background --------------------------------
 if [[ -f "$LOG_DIR/supervisor.pid" ]] && kill -0 "$(cat "$LOG_DIR/supervisor.pid")" 2>/dev/null; then
     log "Bridge already running (pid $(cat "$LOG_DIR/supervisor.pid")). Restarting it."

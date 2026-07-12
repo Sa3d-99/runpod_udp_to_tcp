@@ -5,9 +5,13 @@
 #                the exact URL to open in your browser.
 #
 # ONE-TIME PREREQUISITE (RunPod console):
-#   Edit Pod -> "Expose TCP Ports" -> add 3478 -> save (pod restarts).
-#   RunPod then injects RUNPOD_PUBLIC_IP and RUNPOD_TCP_PORT_3478 into the
-#   container, and this script picks them up automatically.
+#   Edit Pod -> "Expose TCP Ports" -> set to: 3478,8211,49100 -> save (pod
+#   restarts). RunPod then injects RUNPOD_PUBLIC_IP and RUNPOD_TCP_PORT_3478 /
+#   _8211 / _49100 into the container; this script picks them all up.
+#     3478  = TURN relay (media over TCP)
+#     8211  = web player page, served over direct TCP (plain http, so the
+#             browser is allowed to call the plain-http signaling endpoint)
+#     49100 = WebRTC signaling (kit-player.js gets patched to its mapped port)
 #
 # USAGE — no arguments, no env vars needed:
 #   ./start_all.sh
@@ -38,6 +42,9 @@ bash "$DIR/install.sh"
 RUNPOD_MAPPED_PORT_VAR="RUNPOD_TCP_PORT_${TURN_INTERNAL_PORT}"
 RUNPOD_MAPPED_PORT="${!RUNPOD_MAPPED_PORT_VAR:-}"
 
+PAGE_MAPPED_PORT="${RUNPOD_TCP_PORT_8211:-}"
+SIGNALING_MAPPED_PORT="${RUNPOD_TCP_PORT_49100:-}"
+
 if [[ -n "${TURN_PUBLIC_IP:-}" && -n "${TURN_PUBLIC_PORT:-}" ]]; then
     log "TURN mode (manual): ${TURN_PUBLIC_IP}:${TURN_PUBLIC_PORT}"
 elif [[ -n "${RUNPOD_PUBLIC_IP:-}" && -n "$RUNPOD_MAPPED_PORT" ]]; then
@@ -48,20 +55,31 @@ else
     echo "ERROR: no TURN port mapping found."
     echo ""
     echo "Fix (one time, RunPod console):"
-    echo "  Edit Pod -> 'Expose TCP Ports' -> add ${TURN_INTERNAL_PORT} -> save (pod restarts)."
-    echo "  Then just run ./start_all.sh again — the mapping is auto-detected via"
-    echo "  RUNPOD_PUBLIC_IP and ${RUNPOD_MAPPED_PORT_VAR}."
+    echo "  Edit Pod -> 'Expose TCP Ports' -> set to: ${TURN_INTERNAL_PORT},8211,49100 -> save (pod restarts)."
+    echo "  Then just run ./start_all.sh again — mappings are auto-detected via"
+    echo "  RUNPOD_PUBLIC_IP and RUNPOD_TCP_PORT_* env vars."
     echo ""
     echo "Or set manually: TURN_PUBLIC_IP=<ip> TURN_PUBLIC_PORT=<port> ./start_all.sh"
     exit 1
 fi
 
+if [[ -z "$PAGE_MAPPED_PORT" || -z "$SIGNALING_MAPPED_PORT" ]]; then
+    echo "ERROR: ports 8211 and/or 49100 are not exposed as Direct TCP."
+    echo ""
+    echo "The web player must be served over plain http (browsers block an https page"
+    echo "from calling the plain-http signaling endpoint), and signaling needs its own"
+    echo "TCP mapping. Fix (one time, RunPod console):"
+    echo "  Edit Pod -> 'Expose TCP Ports' -> set to: ${TURN_INTERNAL_PORT},8211,49100 -> save (pod restarts)."
+    echo "  Then run ./start_all.sh again."
+    exit 1
+fi
+export SIGNALING_PUBLIC_PORT="$SIGNALING_MAPPED_PORT"
+
 # --- 2. start the bridge (backgrounds itself, safe to re-run) --------------------
 bash "$DIR/turn_bridge.sh"
 
 # --- 3. build and show the URL to open -------------------------------------------
-POD="${RUNPOD_POD_ID:-<POD_ID>}"
-URL="https://${POD}-8211.proxy.runpod.net/streaming/webrtc-client?server=${POD}-8211.proxy.runpod.net"
+URL="http://${TURN_PUBLIC_IP}:${PAGE_MAPPED_PORT}/streaming/webrtc-demo/?server=${TURN_PUBLIC_IP}"
 echo "$URL" > "$LOG_DIR/stream_url.txt"
 
 echo ""
