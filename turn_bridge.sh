@@ -29,8 +29,8 @@
 # REQUIREMENTS
 #   - Isaac Sim <= 4.2 (the version that serves the browser client on 8211
 #     and lets you configure iceServers). Isaac Sim 5.x removed the ICE/TURN
-#     configuration entirely (confirmed by NVIDIA) — for 5.x use
-#     tailscale_bridge.sh from this folder instead.
+#     configuration entirely (confirmed by NVIDIA); there the workaround is a
+#     custom web client (NVIDIA web-viewer-sample) with browser-side iceServers.
 #   - ONE RunPod "Direct TCP" exposed port. In the RunPod console:
 #       Pod -> Edit Pod -> "Expose TCP Ports" -> add 3478 -> save (pod restarts).
 #     Then under Connect -> "Direct TCP Ports" RunPod shows a mapping like
@@ -108,8 +108,8 @@ EOF
 EXT_TOML="$(find "$ISAAC_ROOT" -path '*omni.services.streamclient.webrtc*/config/extension.toml' 2>/dev/null | head -1 || true)"
 if [[ -z "$EXT_TOML" ]]; then
     log "WARNING: could not find omni.services.streamclient.webrtc extension under $ISAAC_ROOT."
-    log "         If you run Isaac Sim 5.x this is expected — TURN config was removed by NVIDIA;"
-    log "         use tailscale_bridge.sh instead. Otherwise set ISAAC_ROOT and re-run."
+    log "         If you run Isaac Sim 5.x this is expected — TURN config was removed by NVIDIA."
+    log "         Otherwise set ISAAC_ROOT and re-run."
 else
     cp -n "$EXT_TOML" "${EXT_TOML}.bak" || true
     TURN_URL="turn:${TURN_PUBLIC_IP}:${TURN_PUBLIC_PORT}?transport=tcp" \

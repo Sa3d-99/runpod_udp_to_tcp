@@ -1,0 +1,8 @@
+# No pip packages required — the scripts use the Python standard library only.
+# Add future Python dependencies below this line, one per line.
+#
+# System-level dependencies (installed by install.sh via apt, NOT pip):
+#   git        - clone/update this repo on the pod
+#   python3    - runs the TOML config patcher inside turn_bridge.sh
+#   coturn     - the TURN relay (the actual UDP-to-TCP bridge)
+#   iproute2   - provides `ss` for port checks

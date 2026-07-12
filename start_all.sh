@@ -14,9 +14,6 @@
 #
 # Optional overrides (only if auto-detection is not wanted):
 #   TURN_PUBLIC_IP / TURN_PUBLIC_PORT   manual TURN mapping
-#   TS_AUTHKEY                          Tailscale mode (own VM/bare metal only;
-#                                       RunPod containers lack /dev/net/tun,
-#                                       WebRTC media fails there)
 #   TURN_INTERNAL_PORT (default 3478)   ISAAC_ROOT (default /isaac-sim)
 #
 # The bridge is idempotent and stays running in the background; Isaac Sim runs
@@ -34,21 +31,19 @@ mkdir -p "$LOG_DIR"
 
 log() { echo "[start-all] $*"; }
 
-# --- 1. pick mode: explicit vars > RunPod auto-detect > Tailscale ---------------
+# --- 0. install dependencies (idempotent, fast when already installed) ----------
+bash "$DIR/install.sh"
+
+# --- 1. find the TURN port mapping: explicit vars > RunPod auto-detect ----------
 RUNPOD_MAPPED_PORT_VAR="RUNPOD_TCP_PORT_${TURN_INTERNAL_PORT}"
 RUNPOD_MAPPED_PORT="${!RUNPOD_MAPPED_PORT_VAR:-}"
 
 if [[ -n "${TURN_PUBLIC_IP:-}" && -n "${TURN_PUBLIC_PORT:-}" ]]; then
-    MODE=turn
     log "TURN mode (manual): ${TURN_PUBLIC_IP}:${TURN_PUBLIC_PORT}"
 elif [[ -n "${RUNPOD_PUBLIC_IP:-}" && -n "$RUNPOD_MAPPED_PORT" ]]; then
-    MODE=turn
     export TURN_PUBLIC_IP="$RUNPOD_PUBLIC_IP"
     export TURN_PUBLIC_PORT="$RUNPOD_MAPPED_PORT"
     log "TURN mode (auto-detected from RunPod): ${TURN_PUBLIC_IP}:${TURN_PUBLIC_PORT} -> :${TURN_INTERNAL_PORT}"
-elif [[ -n "${TS_AUTHKEY:-}" ]]; then
-    MODE=tailscale
-    log "Tailscale mode (note: WebRTC media does not work on RunPod containers)"
 else
     echo "ERROR: no TURN port mapping found."
     echo ""
@@ -62,16 +57,11 @@ else
 fi
 
 # --- 2. start the bridge (backgrounds itself, safe to re-run) --------------------
-bash "$DIR/${MODE}_bridge.sh"
+bash "$DIR/turn_bridge.sh"
 
 # --- 3. build and show the URL to open -------------------------------------------
-if [[ "$MODE" == "tailscale" ]]; then
-    TS_IP="$(tailscale --socket=/tmp/tailscaled.sock ip -4 | head -1)"
-    URL="http://${TS_IP}:8211/streaming/webrtc-client?server=${TS_IP}"
-else
-    POD="${RUNPOD_POD_ID:-<POD_ID>}"
-    URL="https://${POD}-8211.proxy.runpod.net/streaming/webrtc-client?server=${POD}-8211.proxy.runpod.net"
-fi
+POD="${RUNPOD_POD_ID:-<POD_ID>}"
+URL="https://${POD}-8211.proxy.runpod.net/streaming/webrtc-client?server=${POD}-8211.proxy.runpod.net"
 echo "$URL" > "$LOG_DIR/stream_url.txt"
 
 echo ""
