@@ -1,6 +1,9 @@
 # RunPod template — description text
 
-Paste the block below into your RunPod template's **README / description** field.
+**Live template:** [Isaac-Sim-Official](https://console.runpod.io/deploy?template=4qyomso891)
+· id `4qyomso891` · public
+
+Paste the block below into the template's **README / description** field.
 Everything above the line is notes for you, not for the template.
 
 **Template settings to match it:**
@@ -81,6 +84,11 @@ the desktop cannot be installed — so 4090 is the supported combination.)
 The desktop has **no password by default** — anyone with the pod URL can control
 the sim. Set a `VNC_PASSWORD` environment variable on the pod to require one, and
 stop the pod when you're not using it.
+
+### Deploy
+
+[**Deploy this template**](https://console.runpod.io/deploy?template=4qyomso891)
+· or search RunPod Templates for **`Isaac-Sim-Official`**
 
 ### Source & details
 

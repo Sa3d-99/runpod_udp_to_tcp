@@ -8,19 +8,22 @@ One script. One command. That's the whole repo.
 
 ## Easiest way — deploy the ready-made template
 
-A RunPod template is already set up with everything below. **Nothing to install,
-nothing to configure.**
+A public RunPod template is already set up with everything below. **Nothing to
+install, nothing to configure.**
 
-1. In RunPod, go to **Templates** and search for **`Isaac Sim noVNC`**
-   *(by Sa3d-99)*.
-2. Pick a GPU — **RTX 4090** (RTX 50-series does **not** work, see below).
-3. **Deploy.** Wait ~2–3 minutes.
-4. **Connect → HTTP Service → port 8080.**
+### 👉 [**Deploy: Isaac-Sim-Official**](https://console.runpod.io/deploy?template=4qyomso891)
+
+Or find it manually: RunPod → **Templates** → search **`Isaac-Sim-Official`**
+(template id `4qyomso891`).
+
+1. **Pick an RTX 4090.** (RTX 50-series does **not** work — see below.)
+2. **Deploy.** Wait ~2–3 minutes for boot + Isaac Sim to load.
+3. **Connect → HTTP Service → port 8080.**
 
 The Isaac Sim desktop opens in your browser. Load your scene with
 **File → Open**. Done.
 
-> Setting up your own template instead? The exact settings are in
+> Building your own template instead? The exact settings are in
 > [TEMPLATE.md](TEMPLATE.md).
 
 ### ⚠️ GPU: use an RTX 4090, not a 5080/5090
