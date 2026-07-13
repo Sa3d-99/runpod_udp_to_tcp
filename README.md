@@ -57,6 +57,22 @@ Already have the repo on the pod?
 cd /workspace/runpod_noVNC_isaac_sim && bash novnc.sh
 ```
 
+## Stopping it
+
+```bash
+cd /workspace/runpod_noVNC_isaac_sim && bash stop.sh
+```
+
+Stops the desktop and the Isaac Sim GUI, and leaves the pod running. Start it
+again any time with `bash novnc.sh`.
+
+`stop.sh` deliberately leaves the container's *own* Isaac process alone — that
+one is the container's main process, and killing it would stop the whole pod.
+
+**To stop paying, stop the POD itself** in the RunPod console. `stop.sh` only
+shuts down the desktop inside the pod; the pod keeps billing until you stop or
+terminate it.
+
 ## How it works
 
 ```
@@ -144,6 +160,7 @@ stack and the GUI instance it launched itself.
 |---|---|
 | `bootstrap.sh` | **Start here.** Downloads the repo without git, then runs `novnc.sh`. |
 | `novnc.sh` | The method. Virtual display + VNC + noVNC + Isaac GUI. |
+| `stop.sh` | Stops the desktop cleanly (leaves the pod and its main process alive). |
 | `install.sh` | Installs all dependencies via apt + pip. Called automatically; idempotent. |
 | `requirements.txt` | Python dependencies (`websockify`). Also documents the apt-only system packages. |
 | `TEMPLATE.md` | RunPod template settings + the description text to paste. |

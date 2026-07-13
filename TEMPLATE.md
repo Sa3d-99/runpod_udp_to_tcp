@@ -70,8 +70,11 @@ the desktop cannot be installed — so 4090 is the supported combination.)
 
 - **Grey/empty desktop?** Isaac is still loading — give it 1–2 minutes.
 - **Page won't open?** The pod is still booting. Retry after a minute.
-- **Want to restart the desktop?**
+- **Restart the desktop:**
   `cd /workspace/runpod_noVNC_isaac_sim && bash novnc.sh`
+- **Stop the desktop** (pod keeps running):
+  `cd /workspace/runpod_noVNC_isaac_sim && bash stop.sh`
+- **Stop being charged:** stop or terminate the **pod** in the RunPod console.
 
 ### Security
 
