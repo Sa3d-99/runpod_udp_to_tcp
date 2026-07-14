@@ -174,3 +174,11 @@ stack and the GUI instance it launched itself.
 The noVNC endpoint has **no authentication by default** — anyone with the URL can
 view and control the sim. Set `VNC_PASSWORD=...` if the pod URL might be shared,
 and stop the pod when you're not using it.
+
+## License
+
+[MIT](LICENSE) — free to use, modify, and redistribute, including commercially.
+Provided as-is, with no warranty.
+
+Isaac Sim itself is NVIDIA's, under its own license. This repo only contains the
+scripts that put its GUI in your browser.
